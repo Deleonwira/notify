@@ -64,6 +64,39 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
+  void _showMonthYearPicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (_) => Container(
+        height: 260,
+        color: Colors.white,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 200,
+              child: CupertinoDatePicker(
+                initialDateTime: _currentMonth,
+                mode: CupertinoDatePickerMode.monthYear,
+                onDateTimeChanged: (DateTime newDate) {
+                  setState(() {
+                    _currentMonth = newDate;
+                  });
+                },
+              ),
+            ),
+            CupertinoButton(
+              child: const Text(
+                'Done',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _addActivity(ActivityType type) {
     TextEditingController controller = TextEditingController();
     showDialog(
@@ -266,12 +299,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${_currentMonth.day} ${_monthName(_currentMonth.month)}, ${_currentMonth.year.toString().substring(2)}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1C1C1E),
+                      GestureDetector(
+                        onTap: _showMonthYearPicker,
+                        child: Row(
+                          children: [
+                            Text(
+                              '${_currentMonth.day} ${_monthName(_currentMonth.month)}, ${_currentMonth.year.toString().substring(2)}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF1C1C1E),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              CupertinoIcons.chevron_down,
+                              size: 14,
+                              color: Color(0xFF1C1C1E),
+                            ),
+                          ],
                         ),
                       ),
                       Row(
