@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
 import '../widgets/navigation_widgets.dart';
 import '../models/activity_model.dart';
-import '../data/dummy_data.dart';
+import '../data/database_helper.dart';
+import 'add_activity_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   final String title;
@@ -17,7 +19,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _currentMonth = DateTime.now();
   DateTime _selectedDate = DateTime.now();
   List<Activity> _activities = [];
-
   final List<String> _weekDays = [
     'Sun',
     'Mon',
@@ -31,7 +32,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
-    _activities = List.from(dummyActivities); // load from dummy data
+    _loadActivities();
+  }
+
+  Future<void> _loadActivities() async {
+    final activities = await DatabaseHelper().getActivities();
+    if (mounted) {
+      setState(() {
+        _activities = activities;
+      });
+    }
   }
 
   int get _daysInMonth {
@@ -39,7 +49,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   int get _firstWeekdayOffset {
-    // 0 = Sunday, 1 = Monday...
     final firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
     return firstDay.weekday % 7;
   }
@@ -97,60 +106,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  void _addActivity(ActivityType type) {
-    TextEditingController controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            'New ${type.name.capitalize()}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Enter title here',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _getColorForType(type),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  setState(() {
-                    _activities.add(
-                      Activity(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        title: controller.text.trim(),
-                        type: type,
-                        date: _selectedDate,
-                      ),
-                    );
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Save', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
+  Future<void> _navigateToAddScreen(ActivityType type) async {
+    final result = await Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (_) =>
+            AddActivityScreen(type: type, initialDate: _selectedDate),
+      ),
     );
+
+    if (result == true) {
+      _loadActivities();
+    }
   }
 
   void _showAddTemplateBottomSheet() {
@@ -185,7 +152,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     color: const Color(0xFF007AFF),
                     onTap: () {
                       Navigator.pop(context);
-                      _addActivity(ActivityType.todo);
+                      _navigateToAddScreen(ActivityType.todo);
                     },
                   ),
                   _TemplateOption(
@@ -194,7 +161,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     color: const Color(0xFFFF9500),
                     onTap: () {
                       Navigator.pop(context);
-                      _addActivity(ActivityType.event);
+                      _navigateToAddScreen(ActivityType.event);
                     },
                   ),
                   _TemplateOption(
@@ -203,7 +170,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     color: const Color(0xFFFF2D55),
                     onTap: () {
                       Navigator.pop(context);
-                      _addActivity(ActivityType.reminder);
+                      _navigateToAddScreen(ActivityType.reminder);
                     },
                   ),
                 ],
@@ -216,28 +183,33 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  void _toggleTodo(Activity activity) {
+  void _toggleTodo(Activity activity) async {
     if (activity.type == ActivityType.todo) {
       setState(() {
         activity.isCompleted = !activity.isCompleted;
       });
+      await DatabaseHelper().updateActivity(activity);
     }
   }
 
-  void _deleteActivity(Activity activity) {
+  void _toggleSubTask(Activity act, SubTask st) async {
+    setState(() {
+      st.isCompleted = !st.isCompleted;
+      // If all subtasks are complete, mark main activity as complete
+      act.isCompleted = act.subTasks.every((s) => s.isCompleted);
+    });
+    if (st.id != null) {
+      await DatabaseHelper().toggleSubTaskCompletion(st.id!, st.isCompleted);
+    }
+    await DatabaseHelper().updateActivity(act);
+  }
+
+  void _deleteActivity(Activity activity) async {
     setState(() {
       _activities.remove(activity);
     });
-  }
-
-  Color _getColorForType(ActivityType type) {
-    switch (type) {
-      case ActivityType.todo:
-        return const Color(0xFF007AFF);
-      case ActivityType.event:
-        return const Color(0xFFFF9500);
-      case ActivityType.reminder:
-        return const Color(0xFFFF2D55);
+    if (activity.id != null) {
+      await DatabaseHelper().deleteActivity(activity.id!);
     }
   }
 
@@ -295,7 +267,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               child: Column(
                 children: [
-                  // Header Row: Month Year and Arrows
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -347,29 +318,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-
-                  // Days of the Week
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: _weekDays.map((day) {
-                      return SizedBox(
-                        width: 32,
-                        child: Center(
-                          child: Text(
-                            day,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[500],
+                    children: _weekDays
+                        .map(
+                          (day) => SizedBox(
+                            width: 32,
+                            child: Center(
+                              child: Text(
+                                day,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        )
+                        .toList(),
                   ),
                   const SizedBox(height: 12),
-
-                  // Calendar Grid
                   GridView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
@@ -383,9 +352,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     itemCount: _daysInMonth + _firstWeekdayOffset,
                     itemBuilder: (context, index) {
                       if (index < _firstWeekdayOffset) {
-                        return const SizedBox.shrink(); // empty cells
+                        return const SizedBox.shrink();
                       }
-
                       final day = index - _firstWeekdayOffset + 1;
                       final date = DateTime(
                         _currentMonth.year,
@@ -396,16 +364,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           date.year == _selectedDate.year &&
                           date.month == _selectedDate.month &&
                           date.day == _selectedDate.day;
-
                       final dayActivities = _getActivitiesForDate(date);
 
                       return GestureDetector(
                         onTap: () {
-                          setState(() {
-                            _selectedDate = date;
-                          });
-                          // As requested, user can pick templates on click.
-                          // Showing bottom sheet when a date is clicked to add templates quickly.
+                          setState(() => _selectedDate = date);
                           _showAddTemplateBottomSheet();
                         },
                         child: Container(
@@ -435,19 +398,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   padding: const EdgeInsets.only(top: 2),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: dayActivities.take(3).map((act) {
-                                      return Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 1.5,
-                                        ),
-                                        width: 4,
-                                        height: 4,
-                                        decoration: BoxDecoration(
-                                          color: act.color,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      );
-                                    }).toList(),
+                                    children: dayActivities
+                                        .take(3)
+                                        .map(
+                                          (act) => Container(
+                                            margin: const EdgeInsets.symmetric(
+                                              horizontal: 1.5,
+                                            ),
+                                            width: 4,
+                                            height: 4,
+                                            decoration: BoxDecoration(
+                                              color: act.color,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
                                   ),
                                 ),
                             ],
@@ -491,8 +457,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       itemCount: selectedDateActivities.length,
                       itemBuilder: (context, index) {
                         final act = selectedDateActivities[index];
+                        final bool hasTime = act.startTime != null;
                         return Dismissible(
-                          key: Key(act.id),
+                          key: ValueKey(act.id),
                           direction: DismissDirection.endToStart,
                           onDismissed: (_) => _deleteActivity(act),
                           background: Container(
@@ -512,6 +479,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
+                              border: act.priority != ActivityPriority.none
+                                  ? Border(
+                                      left: BorderSide(
+                                        color: act.priorityColor,
+                                        width: 4,
+                                      ),
+                                    )
+                                  : null,
                               boxShadow: [
                                 BoxShadow(
                                   color: act.color.withAlpha(15),
@@ -520,71 +495,179 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 ),
                               ],
                             ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 8,
-                              ),
-                              leading: GestureDetector(
-                                onTap: () => _toggleTodo(act),
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
+                            child: Theme(
+                              // Used ExpansionTile to allow showing subtasks list
+                              data: Theme.of(
+                                context,
+                              ).copyWith(dividerColor: Colors.transparent),
+                              child: ExpansionTile(
+                                leading: act.type == ActivityType.todo
+                                    ? GestureDetector(
+                                        onTap: () => _toggleTodo(act),
+                                        child: Container(
+                                          width: 24,
+                                          height: 24,
+                                          margin: const EdgeInsets.only(top: 4),
+                                          decoration: BoxDecoration(
+                                            color: act.isCompleted
+                                                ? act.color
+                                                : Colors.transparent,
+                                            border: Border.all(
+                                              color: act.isCompleted
+                                                  ? act.color
+                                                  : act.color.withAlpha(100),
+                                              width: 2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: act.isCompleted
+                                              ? const Icon(
+                                                  CupertinoIcons.checkmark,
+                                                  size: 14,
+                                                  color: Colors.white,
+                                                )
+                                              : null,
+                                        ),
+                                      )
+                                    : Container(
+                                        width: 24,
+                                        height: 24,
+                                        margin: const EdgeInsets.only(top: 4),
+                                        decoration: BoxDecoration(
+                                          color: act.color.withAlpha(26),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          act.type == ActivityType.event
+                                              ? CupertinoIcons.calendar
+                                              : CupertinoIcons.bell,
+                                          size: 12,
+                                          color: act.color,
+                                        ),
+                                      ),
+                                title: Text(
+                                  act.title,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    decoration:
+                                        act.type == ActivityType.todo &&
+                                            act.isCompleted
+                                        ? TextDecoration.lineThrough
+                                        : TextDecoration.none,
                                     color:
                                         act.type == ActivityType.todo &&
                                             act.isCompleted
-                                        ? act.color
-                                        : Colors.transparent,
-                                    border: Border.all(
-                                      color:
-                                          act.type == ActivityType.todo &&
-                                              act.isCompleted
-                                          ? act.color
-                                          : act.color.withAlpha(100),
-                                      width: 2,
-                                    ),
-                                    shape: act.type == ActivityType.todo
-                                        ? BoxShape.rectangle
-                                        : BoxShape.circle,
-                                    borderRadius: act.type == ActivityType.todo
-                                        ? BorderRadius.circular(6)
-                                        : null,
+                                        ? Colors.grey
+                                        : const Color(0xFF1C1C1E),
                                   ),
-                                  child:
-                                      act.type == ActivityType.todo &&
-                                          act.isCompleted
-                                      ? const Icon(
-                                          CupertinoIcons.checkmark,
-                                          size: 14,
-                                          color: Colors.white,
-                                        )
-                                      : null,
                                 ),
-                              ),
-                              title: Text(
-                                act.title,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  decoration:
-                                      act.type == ActivityType.todo &&
-                                          act.isCompleted
-                                      ? TextDecoration.lineThrough
-                                      : TextDecoration.none,
-                                  color:
-                                      act.type == ActivityType.todo &&
-                                          act.isCompleted
-                                      ? Colors.grey
-                                      : const Color(0xFF1C1C1E),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    if (hasTime)
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            CupertinoIcons.clock,
+                                            size: 12,
+                                            color: Colors.grey[500],
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "${DateFormat.Hm().format(act.startTime!)}${act.endTime != null ? ' - ${DateFormat.Hm().format(act.endTime!)}' : ''}",
+                                            style: TextStyle(
+                                              color: Colors.grey[500],
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (act.subTasks.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: LinearProgressIndicator(
+                                              value: act.progress,
+                                              backgroundColor: Colors.grey[200],
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    act.color,
+                                                  ),
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
+                                              minHeight: 4,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '${act.subTasks.where((s) => s.isCompleted).length}/${act.subTasks.length}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[500],
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                              ),
-                              subtitle: Text(
-                                act.type.name.capitalize(),
-                                style: TextStyle(
-                                  color: act.color,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                children: [
+                                  if (act.description != null)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 8,
+                                      ),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          act.description!,
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  if (act.subTasks.isNotEmpty)
+                                    ...act.subTasks.map((st) {
+                                      return CheckboxListTile(
+                                        title: Text(
+                                          st.title,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            decoration: st.isCompleted
+                                                ? TextDecoration.lineThrough
+                                                : null,
+                                            color: st.isCompleted
+                                                ? Colors.grey
+                                                : Colors.black,
+                                          ),
+                                        ),
+                                        value: st.isCompleted,
+                                        activeColor: act.color,
+                                        checkboxShape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        onChanged: (val) =>
+                                            _toggleSubTask(act, st),
+                                        controlAffinity:
+                                            ListTileControlAffinity.leading,
+                                        contentPadding: const EdgeInsets.only(
+                                          left: 32,
+                                          right: 16,
+                                        ),
+                                      );
+                                    }),
+                                  const SizedBox(height: 8),
+                                ],
                               ),
                             ),
                           ),
@@ -640,11 +723,5 @@ class _TemplateOption extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }

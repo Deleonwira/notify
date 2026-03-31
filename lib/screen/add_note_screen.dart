@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/note_models.dart';
+import '../data/database_helper.dart';
+import 'category_selection_screen.dart';
 
 class AddNoteScreen extends StatefulWidget {
-  const AddNoteScreen({super.key});
+  final Note? existingNote;
+
+  const AddNoteScreen({super.key, this.existingNote});
 
   @override
   State<AddNoteScreen> createState() => _AddNoteScreenState();
@@ -24,17 +28,42 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   ];
 
   int selectedColorIndex = 0;
+  String? selectedCategory;
 
-  void saveNote() {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingNote != null) {
+      titleController.text = widget.existingNote!.title;
+      contentController.text = widget.existingNote!.content;
+      selectedCategory = widget.existingNote!.category;
+      selectedColorIndex = noteColors.indexWhere(
+        (c) => c.value == widget.existingNote!.color.value,
+      );
+      if (selectedColorIndex == -1) selectedColorIndex = 0;
+    }
+  }
+
+  void saveNote() async {
     if (titleController.text.trim().isEmpty) return;
 
     final newNote = Note(
+      id: widget.existingNote?.id,
       title: titleController.text.trim(),
       content: contentController.text.trim(),
       color: noteColors[selectedColorIndex],
+      category: selectedCategory,
+      createdAt: widget.existingNote?.createdAt,
     );
 
-    Navigator.pop(context, newNote);
+    if (widget.existingNote != null) {
+      await DatabaseHelper().updateNote(newNote);
+    } else {
+      await DatabaseHelper().insertNote(newNote);
+    }
+
+    if (!mounted) return;
+    Navigator.pop(context, true);
   }
 
   @override
@@ -74,9 +103,9 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             ),
           ),
         ),
-        title: const Text(
-          'New Note',
-          style: TextStyle(
+        title: Text(
+          widget.existingNote != null ? 'Edit Note' : 'New Note',
+          style: const TextStyle(
             color: Color(0xFF1C1C1E),
             fontWeight: FontWeight.w700,
             fontSize: 18,
@@ -84,6 +113,21 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         ),
         centerTitle: true,
         actions: [
+          if (widget.existingNote != null)
+            GestureDetector(
+              onTap: () async {
+                await DatabaseHelper().deleteNote(widget.existingNote!.id!);
+                if (mounted) Navigator.pop(context, true);
+              },
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: const Icon(
+                  CupertinoIcons.trash,
+                  color: Color(0xFFFF3B30),
+                  size: 24,
+                ),
+              ),
+            ),
           GestureDetector(
             onTap: saveNote,
             child: Container(
@@ -181,6 +225,73 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(20),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Category selector
+            Text(
+              'Category',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[500],
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (_) => CategorySelectionScreen(
+                      selectedCategory: selectedCategory,
+                    ),
+                  ),
+                );
+                if (result != null && result is String) {
+                  setState(() {
+                    selectedCategory = result;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(10),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      selectedCategory ?? 'Select Category',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: selectedCategory != null
+                            ? const Color(0xFF1C1C1E)
+                            : Colors.grey[400],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Icon(
+                      CupertinoIcons.chevron_right,
+                      size: 18,
+                      color: Colors.grey[400],
+                    ),
+                  ],
                 ),
               ),
             ),
