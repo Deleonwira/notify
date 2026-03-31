@@ -616,6 +616,28 @@ class _NoteCard extends StatelessWidget {
     return Dismissible(
       key: UniqueKey(),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        return await showCupertinoDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return CupertinoAlertDialog(
+              title: const Text('Delete Note'),
+              content: const Text('Are you sure you want to delete this note?'),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.of(context).pop(false),
+                ),
+                CupertinoDialogAction(
+                  isDestructiveAction: true,
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        );
+      },
       onDismissed: (_) => onDelete(),
       background: Container(
         alignment: Alignment.centerRight,
