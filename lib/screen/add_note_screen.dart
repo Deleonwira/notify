@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/note_models.dart';
+import '../models/category_model.dart';
 import '../data/database_helper.dart';
 import 'category_selection_screen.dart';
 
 class AddNoteScreen extends StatefulWidget {
   final Note? existingNote;
+  final Category? preSelectedCategory;
 
-  const AddNoteScreen({super.key, this.existingNote});
+  const AddNoteScreen({super.key, this.existingNote, this.preSelectedCategory});
 
   @override
   State<AddNoteScreen> createState() => _AddNoteScreenState();
@@ -17,30 +19,40 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   final titleController = TextEditingController();
   final contentController = TextEditingController();
 
-  final List<Color> noteColors = const [
-    Color(0xFF007AFF),
-    Color(0xFF34C759),
-    Color(0xFFFF9500),
-    Color(0xFFAF52DE),
-    Color(0xFFFF2D55),
-    Color(0xFF5AC8FA),
-    Color(0xFFFFCC00),
-  ];
-
-  int selectedColorIndex = 0;
   String? selectedCategory;
+  Color? categoryColor;
+  int? categoryIconCodePoint;
 
   @override
   void initState() {
     super.initState();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
     if (widget.existingNote != null) {
       titleController.text = widget.existingNote!.title;
       contentController.text = widget.existingNote!.content;
       selectedCategory = widget.existingNote!.category;
-      selectedColorIndex = noteColors.indexWhere(
-        (c) => c.value == widget.existingNote!.color.value,
-      );
-      if (selectedColorIndex == -1) selectedColorIndex = 0;
+      categoryColor = widget.existingNote!.color;
+
+      // Fetch icon for existing category
+      if (selectedCategory != null) {
+        final cats = await DatabaseHelper().getCategories();
+        final cat = cats.firstWhere((c) => c.name == selectedCategory, 
+            orElse: () => Category(name: '', iconCodePoint: 0xf42d)); // Default icon if not found
+        if (mounted) {
+          setState(() {
+            categoryIconCodePoint = cat.iconCodePoint;
+          });
+        }
+      }
+    } else if (widget.preSelectedCategory != null) {
+      setState(() {
+        selectedCategory = widget.preSelectedCategory!.name;
+        categoryColor = widget.preSelectedCategory!.color;
+        categoryIconCodePoint = widget.preSelectedCategory!.iconCodePoint;
+      });
     }
   }
 
@@ -51,7 +63,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       id: widget.existingNote?.id,
       title: titleController.text.trim(),
       content: contentController.text.trim(),
-      color: noteColors[selectedColorIndex],
+      color: categoryColor ?? const Color(0xFF7C3AED),
       category: selectedCategory,
       createdAt: widget.existingNote?.createdAt,
     );
@@ -76,281 +88,227 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8FA),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(15),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              CupertinoIcons.back,
-              color: Color(0xFF1C1C1E),
-              size: 20,
+        leadingWidth: 80,
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => Navigator.pop(context),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(
+              color: Color(0xFF007AFF), // iOS System Blue
+              fontSize: 17,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ),
         title: Text(
           widget.existingNote != null ? 'Edit Note' : 'New Note',
           style: const TextStyle(
-            color: Color(0xFF1C1C1E),
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
+            fontSize: 17,
+            letterSpacing: -0.4,
           ),
         ),
         centerTitle: true,
         actions: [
-          if (widget.existingNote != null)
-            GestureDetector(
-              onTap: () async {
-                await DatabaseHelper().deleteNote(widget.existingNote!.id!);
-                if (mounted) Navigator.pop(context, true);
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 8),
-                child: const Icon(
-                  CupertinoIcons.trash,
-                  color: Color(0xFFFF3B30),
-                  size: 24,
-                ),
-              ),
-            ),
-          GestureDetector(
-            onTap: saveNote,
-            child: Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF007AFF).withAlpha(77),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Text(
-                'Save',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
+          CupertinoButton(
+            padding: const EdgeInsets.only(right: 16),
+            onPressed: saveNote,
+            child: const Text(
+              'Done',
+              style: TextStyle(
+                color: Color(0xFF007AFF), // iOS System Blue
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title field
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(10),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title field
+                  TextField(
+                    controller: titleController,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      letterSpacing: -1.0,
+                    ),
+                    maxLines: null,
+                    decoration: InputDecoration(
+                      hintText: 'Note Title',
+                      hintStyle: TextStyle(
+                        color: Colors.grey[300],
+                        fontWeight: FontWeight.w800,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // Content field
+                  TextField(
+                    controller: contentController,
+                    maxLines: null,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Color(0xFF3A3A3C),
+                      height: 1.5,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Start writing...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey[300],
+                        fontWeight: FontWeight.w400,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
                   ),
                 ],
               ),
-              child: TextField(
-                controller: titleController,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1C1C1E),
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Title',
-                  hintStyle: TextStyle(
-                    color: Colors.grey[350],
-                    fontWeight: FontWeight.w600,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(20),
-                ),
+            ),
+          ),
+          
+          // Bottom toolbar for Category and Colors
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(color: Colors.grey[100]!, width: 1),
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Content field
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(10),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: contentController,
-                maxLines: 8,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF3A3A3C),
-                  height: 1.5,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Start writing...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey[350],
-                    fontWeight: FontWeight.w400,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(20),
-                ),
-              ),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 10,
+              top: 10,
+              left: 20,
+              right: 20,
             ),
-            const SizedBox(height: 24),
-
-            // Category selector
-            Text(
-              'Category',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[500],
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () async {
-                final result = await Navigator.push(
-                  context,
-                  CupertinoPageRoute(
-                    builder: (_) => CategorySelectionScreen(
-                      selectedCategory: selectedCategory,
-                    ),
-                  ),
-                );
-                if (result != null && result is String) {
-                  setState(() {
-                    selectedCategory = result;
-                  });
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(10),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Category & Trash button row
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      selectedCategory ?? 'Select Category',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: selectedCategory != null
-                            ? const Color(0xFF1C1C1E)
-                            : Colors.grey[400],
-                        fontWeight: FontWeight.w500,
+                    GestureDetector(
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                            builder: (_) => CategorySelectionScreen(
+                              selectedCategory: selectedCategory,
+                            ),
+                          ),
+                        );
+                        if (result != null && result is Category) {
+                          setState(() {
+                            selectedCategory = result.name;
+                            categoryColor = result.color;
+                            categoryIconCodePoint = result.iconCodePoint;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF2F2F7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            if (categoryIconCodePoint != null) ...[
+                              Icon(
+                                IconData(categoryIconCodePoint!,
+                                    fontFamily: 'CupertinoIcons',
+                                    fontPackage: 'cupertino_icons'),
+                                size: 16,
+                                color: categoryColor ?? const Color(0xFF1C1C1E),
+                              ),
+                              const SizedBox(width: 8),
+                            ] else ...[
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: categoryColor ?? Colors.grey[400],
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Text(
+                              selectedCategory ?? 'No Category',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: const Color(0xFF1C1C1E),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    Icon(
-                      CupertinoIcons.chevron_right,
-                      size: 18,
-                      color: Colors.grey[400],
-                    ),
+                    if (widget.existingNote != null)
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () async {
+                          final shouldDelete = await showCupertinoDialog<bool>(
+                            context: context,
+                            builder: (context) => CupertinoAlertDialog(
+                              title: const Text('Delete Note?'),
+                              content: const Text('This action cannot be undone.'),
+                              actions: [
+                                CupertinoDialogAction(
+                                  child: const Text('Cancel'),
+                                  onPressed: () => Navigator.pop(context, false),
+                                ),
+                                CupertinoDialogAction(
+                                  isDestructiveAction: true,
+                                  child: const Text('Delete'),
+                                  onPressed: () => Navigator.pop(context, true),
+                                ),
+                              ],
+                            ),
+                          );
+                          
+                          if (shouldDelete == true) {
+                            await DatabaseHelper().deleteNote(widget.existingNote!.id!);
+                            if (mounted) Navigator.pop(context, true);
+                          }
+                        },
+                        child: const Icon(
+                          CupertinoIcons.trash,
+                          color: Color(0xFFFF3B30),
+                          size: 22,
+                        ),
+                      ),
                   ],
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: 24),
-
-            // Color picker
-            Text(
-              'Accent Color',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[500],
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: List.generate(noteColors.length, (index) {
-                final isSelected = index == selectedColorIndex;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedColorIndex = index;
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.only(right: 10),
-                    width: isSelected ? 36 : 30,
-                    height: isSelected ? 36 : 30,
-                    decoration: BoxDecoration(
-                      color: noteColors[index],
-                      shape: BoxShape.circle,
-                      border: isSelected
-                          ? Border.all(color: Colors.white, width: 3)
-                          : null,
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: noteColors[index].withAlpha(128),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: isSelected
-                        ? const Icon(
-                            CupertinoIcons.checkmark,
-                            color: Colors.white,
-                            size: 16,
-                          )
-                        : null,
-                  ),
-                );
-              }),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

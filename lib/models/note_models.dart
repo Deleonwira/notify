@@ -13,7 +13,7 @@ class Note {
     required this.title,
     required this.content,
     DateTime? createdAt,
-    this.color = const Color(0xFF007AFF),
+    this.color = const Color(0xFF7C3AED),
     this.category,
   }) : createdAt = createdAt ?? DateTime.now();
 

@@ -46,7 +46,7 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007AFF),
+              backgroundColor: const Color(0xFF7C3AED),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -117,7 +117,9 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String typeStr = widget.type.name.capitalize();
+    String typeStr = widget.type.name.isEmpty 
+        ? '' 
+        : widget.type.name.capitalize();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8FA),
@@ -209,11 +211,15 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
               child: Column(
                 children: [
                   ListTile(
-                    leading: const Icon(
-                      CupertinoIcons.clock,
-                      color: Color(0xFF007AFF),
+                    leading: Icon(
+                      widget.type == ActivityType.reminder 
+                          ? CupertinoIcons.bell 
+                          : CupertinoIcons.clock,
+                      color: const Color(0xFF7C3AED),
                     ),
-                    title: const Text('Start Time'),
+                    title: Text(widget.type == ActivityType.reminder 
+                        ? 'Notification Time' 
+                        : 'Start Time'),
                     trailing: Text(
                       _startTime != null
                           ? DateFormat.Hm().format(_startTime!)
@@ -228,7 +234,7 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
                   ListTile(
                     leading: const Icon(
                       CupertinoIcons.clock_solid,
-                      color: Color(0xFFFF9500),
+                      color: Color(0xFFA855F7),
                     ),
                     title: const Text('End Time'),
                     trailing: Text(
@@ -262,9 +268,9 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
                 Color pColor = p == ActivityPriority.none
                     ? Colors.grey
                     : (p == ActivityPriority.low
-                          ? const Color(0xFF5AC8FA)
+                          ? const Color(0xFFD8B4FE)
                           : (p == ActivityPriority.medium
-                                ? const Color(0xFFFFCC00)
+                                ? const Color(0xFFE9D5FF)
                                 : const Color(0xFFFF3B30)));
                 return Expanded(
                   child: GestureDetector(
@@ -314,7 +320,7 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
                   IconButton(
                     icon: const Icon(
                       CupertinoIcons.add_circled_solid,
-                      color: Color(0xFF007AFF),
+                      color: Color(0xFF7C3AED),
                     ),
                     onPressed: _addSubtask,
                   ),
@@ -364,5 +370,8 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
 }
 
 extension StringExtension on String {
-  String capitalize() => "${this[0].toUpperCase()}${substring(1)}";
+  String capitalize() {
+    if (isEmpty) return '';
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
 }

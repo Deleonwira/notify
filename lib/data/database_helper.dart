@@ -1,7 +1,9 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/note_models.dart';
 import '../models/activity_model.dart';
+import '../models/category_model.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -20,7 +22,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'flutter_notes.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -65,12 +67,28 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE categories(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE
+        name TEXT UNIQUE,
+        color INTEGER,
+        iconCodePoint INTEGER
       )
     ''');
-    await db.execute(
-      "INSERT INTO categories (name) VALUES ('Work'), ('Personal'), ('Ideas'), ('Study')",
-    );
+    
+    await _insertFixedCategories(db);
+  }
+
+  Future<void> _insertFixedCategories(Database db) async {
+    final fixedCategories = [
+      {'name': 'Work', 'color': 0xFF3B82F6, 'iconCodePoint': CupertinoIcons.briefcase.codePoint},
+      {'name': 'Personal', 'color': 0xFF10B981, 'iconCodePoint': CupertinoIcons.person.codePoint},
+      {'name': 'Ideas', 'color': 0xFFF59E0B, 'iconCodePoint': CupertinoIcons.lightbulb.codePoint},
+      {'name': 'Study', 'color': 0xFF8B5CF6, 'iconCodePoint': CupertinoIcons.book.codePoint},
+      {'name': 'Shopping', 'color': 0xFFEC4899, 'iconCodePoint': CupertinoIcons.shopping_cart.codePoint},
+      {'name': 'Health', 'color': 0xFFEF4444, 'iconCodePoint': CupertinoIcons.heart.codePoint},
+    ];
+
+    for (var cat in fixedCategories) {
+      await db.insert('categories', cat, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -79,34 +97,50 @@ class DatabaseHelper {
       await db.execute('''
         CREATE TABLE categories(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT UNIQUE
+          name TEXT UNIQUE,
+          color INTEGER,
+          iconCodePoint INTEGER
         )
       ''');
-      await db.execute(
-        "INSERT INTO categories (name) VALUES ('Work'), ('Personal'), ('Ideas'), ('Study')",
-      );
+      await _insertFixedCategories(db);
+    } else if (oldVersion < 3) {
+      await db.execute('ALTER TABLE categories ADD COLUMN color INTEGER;');
+      await db.update('categories', {'color': 0xFF7C3AED});
+    }
+    
+    if (oldVersion < 4) {
+      // Add iconCodePoint column
+      try {
+        await db.execute('ALTER TABLE categories ADD COLUMN iconCodePoint INTEGER;');
+      } catch (e) {
+        // column might already exist from half-baked version 2 if logic was messy
+      }
+      
+      // Clear existing and insert fixed set to satisfy "tiap kategori memiliki warnanya masing masing dan icon"
+      await db.delete('categories');
+      await _insertFixedCategories(db);
+    }
+    
+    if (oldVersion < 5) {
+      // Fix icon codepoints by re-inserting fixed categories
+      await db.delete('categories');
+      await _insertFixedCategories(db);
     }
   }
 
   // --- Categories ---
-  Future<List<String>> getCategories() async {
+  Future<List<Category>> getCategories() async {
     final db = await database;
     final maps = await db.query('categories', orderBy: 'id ASC');
-    return maps.map((m) => m['name'] as String).toList();
+    return maps.map((m) => Category.fromMap(m)).toList();
   }
 
-  Future<int> insertCategory(String name) async {
+  // insertCategory and deleteCategory removed to lock the list as requested
+
+  Future<int> insertCategory(Category category) async {
     final db = await database;
-    return await db.insert('categories', {
-      'name': name,
-    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    return await db.insert('categories', category.toMap());
   }
-
-  Future<int> deleteCategory(String name) async {
-    final db = await database;
-    return await db.delete('categories', where: 'name = ?', whereArgs: [name]);
-  }
-
   // --- Notes ---
   Future<int> insertNote(Note note) async {
     final db = await database;
@@ -156,7 +190,7 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'activities',
-      orderBy: 'date ASC',
+      orderBy: 'date ASC, startTime ASC',
     );
 
     List<Activity> activities = [];

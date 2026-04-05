@@ -10,32 +10,32 @@ final List<Note> dummyNotes = [
     content:
         "Discuss project milestones and deadlines with the team. Review Q2 goals.",
     createdAt: DateTime(2026, 3, 28, 10, 30),
-    color: const Color(0xFF007AFF),
+    color: const Color(0xFF7C3AED),
   ),
   Note(
     title: "Grocery List",
     content: "Milk, Eggs, Bread, Butter, Fresh vegetables, Olive oil",
     createdAt: DateTime(2026, 3, 29, 14, 0),
-    color: const Color(0xFF34C759),
+    color: const Color(0xFF9333EA),
   ),
   Note(
     title: "Flutter Ideas",
     content:
         "Explore new widgets and state management techniques. Try Riverpod.",
     createdAt: DateTime(2026, 3, 30, 9, 15),
-    color: const Color(0xFFFF9500),
+    color: const Color(0xFFA855F7),
   ),
   Note(
     title: "Book Recommendations",
     content: "Atomic Habits, Deep Work, The Pragmatic Programmer",
     createdAt: DateTime(2026, 3, 27, 16, 45),
-    color: const Color(0xFFAF52DE),
+    color: const Color(0xFF8B5CF6),
   ),
   Note(
     title: "Weekend Plans",
     content: "Visit the new cafe downtown. Go hiking if weather permits.",
     createdAt: DateTime(2026, 3, 26, 11, 0),
-    color: const Color(0xFFFF2D55),
+    color: const Color(0xFFC084FC),
   ),
 ];
 

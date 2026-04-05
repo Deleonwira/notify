@@ -97,11 +97,11 @@ class Activity {
   Color get color {
     switch (type) {
       case ActivityType.todo:
-        return const Color(0xFF007AFF); // Apple Blue
+        return const Color(0xFF7C3AED); // Apple Blue
       case ActivityType.event:
-        return const Color(0xFFFF9500); // Apple Orange
+        return const Color(0xFFA855F7); // Apple Orange
       case ActivityType.reminder:
-        return const Color(0xFFFF2D55); // Apple Pink/Red
+        return const Color(0xFFC084FC); // Apple Pink/Red
     }
   }
 
@@ -110,9 +110,9 @@ class Activity {
       case ActivityPriority.none:
         return Colors.transparent;
       case ActivityPriority.low:
-        return const Color(0xFF5AC8FA); // Light priority
+        return const Color(0xFFD8B4FE); // Light priority
       case ActivityPriority.medium:
-        return const Color(0xFFFFCC00); // Medium priority
+        return const Color(0xFFE9D5FF); // Medium priority
       case ActivityPriority.high:
         return const Color(0xFFFF3B30); // High priority
     }

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
 import '../data/database_helper.dart';
 import '../widgets/navigation_widgets.dart';
 import '../models/note_models.dart';
+import '../models/category_model.dart';
+import '../models/activity_model.dart';
 import '../screen/add_note_screen.dart';
+import '../screen/category_selection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String title;
@@ -15,8 +19,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<Note> notes = [];
-  int selectedCategory = 0;
-  List<String> categories = ["All"];
+  List<Activity> activities = [];
+  
+  int selectedCategoryIndex = 0;
+  List<Category> categories = [
+    Category(
+      id: -1,
+      name: "All",
+      color: const Color(0xFF3B0764),
+      iconCodePoint: 0xf42d, // square_grid_2x2
+    ),
+  ];
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   late AnimationController _fabAnimationController;
@@ -26,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _loadCategories();
     _loadNotes();
+    _loadActivities();
     _fabAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -37,8 +51,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final dbCategories = await DatabaseHelper().getCategories();
     if (mounted) {
       setState(() {
-        categories = ["All", ...dbCategories];
-        if (selectedCategory >= categories.length) selectedCategory = 0;
+        categories = [
+          Category(
+            id: -1,
+            name: "All",
+            color: const Color(0xFF3B0764),
+            iconCodePoint: 0xf42d,
+          ),
+          ...dbCategories
+        ];
+        if (selectedCategoryIndex >= categories.length) selectedCategoryIndex = 0;
       });
     }
   }
@@ -48,6 +70,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (mounted) {
       setState(() {
         notes = loadedNotes;
+      });
+    }
+  }
+
+  Future<void> _loadActivities() async {
+    final loadedActivities = await DatabaseHelper().getActivities();
+    if (mounted) {
+      setState(() {
+        activities = loadedActivities;
       });
     }
   }
@@ -75,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1C1C1E),
+                    color: Color(0xFF3B0764),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -83,11 +114,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   spacing: 12,
                   runSpacing: 12,
                   children: List.generate(categories.length, (index) {
-                    final isSelected = index == selectedCategory;
+                    final isSelected = index == selectedCategoryIndex;
                     return GestureDetector(
                       onTap: () {
                         setState(() {
-                          selectedCategory = index;
+                          selectedCategoryIndex = index;
                         });
                         Navigator.pop(context);
                       },
@@ -99,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF1C1C1E)
+                              ? const Color(0xFF3B0764)
                               : Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
@@ -110,13 +141,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        child: Text(
-                          categories[index],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.grey[800],
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              IconData(categories[index].iconCodePoint,
+                                  fontFamily: 'CupertinoIcons',
+                                  fontPackage: 'cupertino_icons'),
+                              color: isSelected ? Colors.white : categories[index].color,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              categories[index].name,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.grey[800],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -156,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
           label: 'Undo',
-          textColor: const Color(0xFF007AFF),
+          textColor: const Color(0xFF7C3AED),
           onPressed: () async {
             await DatabaseHelper().insertNote(deletedNote);
             _loadNotes();
@@ -174,8 +218,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           note.content.toLowerCase().contains(_searchQuery.toLowerCase());
 
       bool matchesCategory = true;
-      if (selectedCategory > 0 && selectedCategory < categories.length) {
-        matchesCategory = note.category == categories[selectedCategory];
+      if (selectedCategoryIndex > 0 && selectedCategoryIndex < categories.length) {
+        matchesCategory = note.category == categories[selectedCategoryIndex].name;
       }
 
       return matchesSearch && matchesCategory;
@@ -189,18 +233,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
     final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return '${date.day} ${months[date.month - 1]}';
   }
@@ -246,64 +280,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 4),
                             const Text(
-                              'Notes',
+                              'Notare',
                               style: TextStyle(
                                 fontSize: 34,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.5,
-                                color: Color(0xFF1C1C1E),
+                                color: Color(0xFF3B0764),
                               ),
                             ),
                           ],
                         ),
-                        // Menu & count
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
+                        // Profile/Drawer Trigger
+                        Builder(
+                          builder: (context) => GestureDetector(
+                            onTap: () {
+                              Scaffold.of(context).openDrawer();
+                            },
+                            child: Container(
+                              width: 40,
+                              height: 40,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF007AFF).withAlpha(26),
-                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha(15),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                              child: Text(
-                                '${notes.length} notes',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF007AFF),
-                                ),
+                              child: const Icon(
+                                CupertinoIcons.line_horizontal_3,
+                                size: 18,
+                                color: Color(0xFF3B0764),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Builder(
-                              builder: (ctx) => GestureDetector(
-                                onTap: () => Scaffold.of(ctx).openDrawer(),
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withAlpha(15),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    CupertinoIcons.line_horizontal_3,
-                                    size: 18,
-                                    color: Color(0xFF1C1C1E),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
@@ -388,11 +401,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           clipBehavior: Clip.none,
                           itemCount: categories.length,
                           itemBuilder: (context, index) {
-                            final isSelected = index == selectedCategory;
+                            final isSelected = index == selectedCategoryIndex;
                             return GestureDetector(
                               onTap: () {
                                 setState(() {
-                                  selectedCategory = index;
+                                  selectedCategoryIndex = index;
                                 });
                               },
                               child: AnimatedContainer(
@@ -405,15 +418,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF1C1C1E)
+                                      ? const Color(0xFF3B0764)
                                       : Colors.white,
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: const Color(
-                                              0xFF1C1C1E,
-                                            ).withAlpha(77),
+                                            color: const Color(0xFF3B0764).withAlpha(77),
                                             blurRadius: 8,
                                             offset: const Offset(0, 3),
                                           ),
@@ -426,15 +437,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           ),
                                         ],
                                 ),
-                                child: Text(
-                                  categories[index],
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : Colors.grey[600],
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      IconData(categories[index].iconCodePoint,
+                                          fontFamily: 'CupertinoIcons',
+                                          fontPackage: 'cupertino_icons'),
+                                      color: isSelected
+                                          ? Colors.white
+                                          : categories[index].color,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      categories[index].name,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.grey[600],
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
@@ -462,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: const Icon(
                           CupertinoIcons.square_grid_2x2,
                           size: 20,
-                          color: Color(0xFF1C1C1E),
+                          color: Color(0xFF3B0764),
                         ),
                       ),
                     ),
@@ -471,44 +496,53 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
 
-            // ── Notes Grid or Empty State ──
+            // ── My Notes Section Header ──
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                child: Row(
+                  children: [
+                    const Text(
+                      'My Notes',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF3B0764),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${displayNotes.length} notes',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             if (displayNotes.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        CupertinoIcons.doc_text,
-                        size: 64,
-                        color: Colors.grey[300],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _searchQuery.isNotEmpty
-                            ? 'No notes found'
-                            : 'No notes yet',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _searchQuery.isNotEmpty
-                            ? 'Try a different search term'
-                            : 'Tap + to create your first note',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                      ),
-                    ],
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(CupertinoIcons.doc_text, size: 48, color: Colors.grey[300]),
+                        const SizedBox(height: 12),
+                        Text('No notes found', style: TextStyle(color: Colors.grey[400])),
+                      ],
+                    ),
                   ),
                 ),
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -541,6 +575,79 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   }, childCount: displayNotes.length),
                 ),
               ),
+
+            // ── Today's Tasks Section Header ──
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 16),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Today\'s Tasks',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF3B0764),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${activities.length} tasks',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            if (activities.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(CupertinoIcons.checkmark_circle, size: 48, color: Colors.grey[300]),
+                        const SizedBox(height: 12),
+                        const Text('No tasks for today', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final activity = activities[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _ActivityTile(
+                          activity: activity,
+                          onToggle: (val) async {
+                            setState(() {
+                              activity.isCompleted = val;
+                            });
+                            await DatabaseHelper().updateActivity(activity);
+                          },
+                          onDelete: () async {
+                            await DatabaseHelper().deleteActivity(activity.id!);
+                            _loadActivities();
+                          },
+                        ),
+                      );
+                    },
+                    childCount: activities.length,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -555,13 +662,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: const LinearGradient(
-              colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
+              colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF007AFF).withAlpha(102),
+                color: const Color(0xFF7C3AED).withAlpha(102),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -575,12 +682,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(20),
             ),
             onPressed: () async {
+              // 1. Select category first
+              final Category? selected = await Navigator.push(
+                context,
+                CupertinoPageRoute(builder: (_) => const CategorySelectionScreen()),
+              );
+
+              if (selected == null) return; // User cancelled
+
+              // 2. Open AddNoteScreen with pre-filled category
+              if (!mounted) return;
               final result = await Navigator.push(
                 context,
-                CupertinoPageRoute(builder: (_) => const AddNoteScreen()),
+                CupertinoPageRoute(
+                  builder: (_) => AddNoteScreen(preSelectedCategory: selected),
+                ),
               );
+
               if (result == true) {
                 _loadNotes();
+                _loadCategories();
               }
             },
             child: const Icon(
@@ -589,6 +710,123 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               size: 26,
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Activity Tile Widget ──
+class _ActivityTile extends StatelessWidget {
+  final Activity activity;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onDelete;
+
+  const _ActivityTile({
+    required this.activity,
+    required this.onToggle,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    IconData icon;
+    switch (activity.type) {
+      case ActivityType.todo:
+        icon = CupertinoIcons.checkmark_circle;
+        break;
+      case ActivityType.event:
+        icon = CupertinoIcons.calendar;
+        break;
+      case ActivityType.reminder:
+        icon = CupertinoIcons.bell;
+        break;
+    }
+
+    return Dismissible(
+      key: UniqueKey(),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => onDelete(),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Colors.red[400],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(CupertinoIcons.trash, color: Colors.white),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => onToggle(!activity.isCompleted),
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: activity.isCompleted ? activity.color : Colors.grey[300]!,
+                    width: 2,
+                  ),
+                  color: activity.isCompleted ? activity.color : Colors.transparent,
+                ),
+                child: activity.isCompleted
+                    ? const Icon(CupertinoIcons.checkmark, size: 14, color: Colors.white)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activity.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      decoration: activity.isCompleted ? TextDecoration.lineThrough : null,
+                      color: activity.isCompleted ? Colors.grey : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(icon, size: 12, color: activity.color),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${activity.type.name.toUpperCase()} • ${DateFormat('HH:mm').format(activity.date)}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (activity.priority != ActivityPriority.none)
+              Container(
+                width: 4,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: activity.priorityColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -697,7 +935,7 @@ class _NoteCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1C1C1E),
+                    color: Color(0xFF3B0764),
                     letterSpacing: -0.2,
                   ),
                   maxLines: 2,

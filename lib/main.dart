@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import './screen/home_screen.dart';
+import './screen/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,13 +19,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Notes',
+      title: 'Notare',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'montserrat',
         scaffoldBackgroundColor: const Color(0xFFF8F8FA),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF007AFF),
+          seedColor: const Color(0xFF7C3AED),
           brightness: Brightness.light,
         ),
         appBarTheme: const AppBarTheme(
@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
           scrolledUnderElevation: 0,
         ),
       ),
-      home: const HomeScreen(title: "Home"),
+      home: const SplashScreen(),
     );
   }
 }
