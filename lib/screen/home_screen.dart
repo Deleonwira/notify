@@ -746,6 +746,37 @@ class _ActivityTile extends StatelessWidget {
     return Dismissible(
       key: UniqueKey(),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        String actType = '';
+        if (activity.type == ActivityType.todo) {
+          actType = 'Todo';
+        } else if (activity.type == ActivityType.event) {
+          actType = 'Event';
+        } else {
+          actType = 'Reminder';
+        }
+        
+        return await showCupertinoDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return CupertinoAlertDialog(
+              title: Text('Delete $actType'),
+              content: Text('Are you sure you want to delete this ${actType.toLowerCase()}?'),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.of(context).pop(false),
+                ),
+                CupertinoDialogAction(
+                  isDestructiveAction: true,
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        );
+      },
       onDismissed: (_) => onDelete(),
       background: Container(
         alignment: Alignment.centerRight,
