@@ -149,7 +149,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   _TemplateOption(
                     icon: CupertinoIcons.checkmark_square,
                     label: 'Todo List',
-                    color: const Color(0xFF7C3AED),
+                    color: const Color(0xFF091413),
                     onTap: () {
                       Navigator.pop(context);
                       _navigateToAddScreen(ActivityType.todo);
@@ -158,7 +158,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   _TemplateOption(
                     icon: CupertinoIcons.calendar,
                     label: 'Event',
-                    color: const Color(0xFFA855F7),
+                    color: const Color(0xFF091413),
                     onTap: () {
                       Navigator.pop(context);
                       _navigateToAddScreen(ActivityType.event);
@@ -167,7 +167,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   _TemplateOption(
                     icon: CupertinoIcons.bell,
                     label: 'Reminder',
-                    color: const Color(0xFFC084FC),
+                    color: const Color(0xFF091413),
                     onTap: () {
                       Navigator.pop(context);
                       _navigateToAddScreen(ActivityType.reminder);
@@ -241,11 +241,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(
         title: const Text(
           'Calendar',
-          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF091413),
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: const Color(0xFF091413)),
       ),
       body: SafeArea(
         child: Column(
@@ -259,7 +262,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha(10),
+                    color: const Color(0xFF091413).withAlpha(10),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -279,14 +282,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF3B0764),
+                                color: const Color(0xFF091413),
                               ),
                             ),
                             const SizedBox(width: 6),
                             const Icon(
                               CupertinoIcons.chevron_down,
                               size: 14,
-                              color: Color(0xFF3B0764),
+                              color: const Color(0xFF091413),
                             ),
                           ],
                         ),
@@ -374,7 +377,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? const Color(0xFF3B0764)
+                                ? const Color(0xFF091413)
                                 : Colors.transparent,
                             shape: BoxShape.circle,
                           ),
@@ -390,7 +393,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       : FontWeight.w500,
                                   color: isSelected
                                       ? Colors.white
-                                      : const Color(0xFF3B0764),
+                                      : Colors.black,
                                 ),
                               ),
                               if (dayActivities.isNotEmpty)
@@ -470,21 +473,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             } else {
                               actType = 'Reminder';
                             }
-                            
+
                             return await showCupertinoDialog<bool>(
                               context: context,
                               builder: (BuildContext context) {
                                 return CupertinoAlertDialog(
                                   title: Text('Delete $actType'),
-                                  content: Text('Are you sure you want to delete this ${actType.toLowerCase()}?'),
+                                  content: Text(
+                                    'Are you sure you want to delete this ${actType.toLowerCase()}?',
+                                  ),
                                   actions: [
                                     CupertinoDialogAction(
                                       child: const Text('Cancel'),
-                                      onPressed: () => Navigator.of(context).pop(false),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
                                     ),
                                     CupertinoDialogAction(
                                       isDestructiveAction: true,
-                                      onPressed: () => Navigator.of(context).pop(true),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
                                       child: const Text('Delete'),
                                     ),
                                   ],
@@ -591,7 +598,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         act.type == ActivityType.todo &&
                                             act.isCompleted
                                         ? Colors.grey
-                                        : const Color(0xFF3B0764),
+                                        : Colors.black,
                                   ),
                                 ),
                                 subtitle: Column(
@@ -602,8 +609,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       Row(
                                         children: [
                                           Icon(
-                                            act.type == ActivityType.reminder 
-                                                ? CupertinoIcons.bell 
+                                            act.type == ActivityType.reminder
+                                                ? CupertinoIcons.bell
                                                 : CupertinoIcons.clock,
                                             size: 12,
                                             color: Colors.grey[500],
@@ -715,7 +722,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTemplateBottomSheet,
-        backgroundColor: const Color(0xFF3B0764),
+        backgroundColor: const Color(0xFF091413),
         child: const Icon(CupertinoIcons.add, color: Colors.white),
       ),
     );

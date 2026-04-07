@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'montserrat',
         scaffoldBackgroundColor: const Color(0xFFF8F8FA),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7C3AED),
+          seedColor: const Color(0xFF091413),
           brightness: Brightness.light,
         ),
         appBarTheme: const AppBarTheme(

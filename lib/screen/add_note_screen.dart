@@ -39,8 +39,10 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       // Fetch icon for existing category
       if (selectedCategory != null) {
         final cats = await DatabaseHelper().getCategories();
-        final cat = cats.firstWhere((c) => c.name == selectedCategory, 
-            orElse: () => Category(name: '', iconCodePoint: 0xf42d)); // Default icon if not found
+        final cat = cats.firstWhere(
+          (c) => c.name == selectedCategory,
+          orElse: () => Category(name: '', iconCodePoint: 0xf42d),
+        ); // Default icon if not found
         if (mounted) {
           setState(() {
             categoryIconCodePoint = cat.iconCodePoint;
@@ -63,7 +65,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       id: widget.existingNote?.id,
       title: titleController.text.trim(),
       content: contentController.text.trim(),
-      color: categoryColor ?? const Color(0xFF7C3AED),
+      color: categoryColor ?? const Color(0xFF091413),
       category: selectedCategory,
       createdAt: widget.existingNote?.createdAt,
     );
@@ -100,8 +102,8 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           child: const Text(
             'Cancel',
             style: TextStyle(
-              color: Color(0xFF007AFF), // iOS System Blue
-              fontSize: 17,
+              color: const Color(0xFF091413),
+              fontSize: 12,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -109,7 +111,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         title: Text(
           widget.existingNote != null ? 'Edit Note' : 'New Note',
           style: const TextStyle(
-            color: Colors.black,
+            color: const Color(0xFF091413),
             fontWeight: FontWeight.w600,
             fontSize: 17,
             letterSpacing: -0.4,
@@ -123,8 +125,8 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             child: const Text(
               'Done',
               style: TextStyle(
-                color: Color(0xFF007AFF), // iOS System Blue
-                fontSize: 17,
+                color: const Color(0xFF091413),
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -146,7 +148,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                     style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w800,
-                      color: Colors.black,
+                      color: const Color(0xFF091413),
                       letterSpacing: -1.0,
                     ),
                     maxLines: null,
@@ -161,7 +163,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Content field
                   TextField(
                     controller: contentController,
@@ -186,7 +188,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               ),
             ),
           ),
-          
+
           // Bottom toolbar for Category and Colors
           Container(
             decoration: BoxDecoration(
@@ -239,9 +241,11 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                           children: [
                             if (categoryIconCodePoint != null) ...[
                               Icon(
-                                IconData(categoryIconCodePoint!,
-                                    fontFamily: 'CupertinoIcons',
-                                    fontPackage: 'cupertino_icons'),
+                                IconData(
+                                  categoryIconCodePoint!,
+                                  fontFamily: 'CupertinoIcons',
+                                  fontPackage: 'cupertino_icons',
+                                ),
                                 size: 16,
                                 color: categoryColor ?? const Color(0xFF1C1C1E),
                               ),
@@ -277,11 +281,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                             context: context,
                             builder: (context) => CupertinoAlertDialog(
                               title: const Text('Delete Note?'),
-                              content: const Text('This action cannot be undone.'),
+                              content: const Text(
+                                'This action cannot be undone.',
+                              ),
                               actions: [
                                 CupertinoDialogAction(
                                   child: const Text('Cancel'),
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                 ),
                                 CupertinoDialogAction(
                                   isDestructiveAction: true,
@@ -291,9 +298,11 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                               ],
                             ),
                           );
-                          
+
                           if (shouldDelete == true) {
-                            await DatabaseHelper().deleteNote(widget.existingNote!.id!);
+                            await DatabaseHelper().deleteNote(
+                              widget.existingNote!.id!,
+                            );
                             if (mounted) Navigator.pop(context, true);
                           }
                         },

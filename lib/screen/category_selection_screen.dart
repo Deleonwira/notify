@@ -69,7 +69,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black87,
+                        color: const Color(0xDD091413),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -93,7 +93,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: const Color(0xDD091413),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -115,7 +115,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                               color: color,
                               shape: BoxShape.circle,
                               border: isSelected
-                                  ? Border.all(color: Colors.black45, width: 3)
+                                  ? Border.all(color: const Color(0x73091413), width: 3)
                                   : null,
                             ),
                           ),
@@ -126,7 +126,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: CupertinoButton(
-                        color: const Color(0xFF007AFF),
+                        color: const Color(0xFF091413),
                         borderRadius: BorderRadius.circular(12),
                         onPressed: () async {
                           final name = nameController.text.trim();
@@ -169,7 +169,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
         title: const Text(
           'Select Category',
           style: TextStyle(
-            color: Colors.black,
+            color: const Color(0xFF091413),
             fontWeight: FontWeight.w600,
             fontSize: 17,
             letterSpacing: -0.4,
@@ -184,7 +184,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
           onPressed: () => Navigator.pop(context),
           child: const Icon(
             CupertinoIcons.chevron_back,
-            color: Color(0xFF007AFF),
+            color: const Color(0xFF091413),
             size: 28,
           ),
         ),
@@ -194,7 +194,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
             onPressed: () => _showAddCategoryModal(context),
             child: const Icon(
               CupertinoIcons.add,
-              color: Color(0xFF007AFF),
+              color: const Color(0xFF091413),
               size: 28,
             ),
           ),
@@ -243,14 +243,14 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                       fontSize: 17,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                       color: isSelected
-                          ? const Color(0xFF007AFF)
+                          ? const Color(0xFF091413)
                           : const Color(0xFF1C1C1E),
                     ),
                   ),
                   trailing: isSelected
                       ? const Icon(
                           CupertinoIcons.checkmark,
-                          color: Color(0xFF007AFF),
+                          color: const Color(0xFF091413),
                           size: 20,
                         )
                       : null,

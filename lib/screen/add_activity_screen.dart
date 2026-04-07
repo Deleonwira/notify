@@ -46,7 +46,7 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7C3AED),
+              backgroundColor: const Color(0xFF091413),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -127,14 +127,14 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.xmark, color: Colors.black),
+          icon: const Icon(CupertinoIcons.xmark, color: const Color(0xFF091413)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'New $typeStr',
           style: const TextStyle(
             fontWeight: FontWeight.w700,
-            color: Colors.black,
+            color: const Color(0xFF091413),
           ),
         ),
         centerTitle: true,
@@ -215,7 +215,7 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
                       widget.type == ActivityType.reminder 
                           ? CupertinoIcons.bell 
                           : CupertinoIcons.clock,
-                      color: const Color(0xFF7C3AED),
+                      color: const Color(0xFF091413),
                     ),
                     title: Text(widget.type == ActivityType.reminder 
                         ? 'Notification Time' 
@@ -234,7 +234,7 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
                   ListTile(
                     leading: const Icon(
                       CupertinoIcons.clock_solid,
-                      color: Color(0xFFA855F7),
+                      color: const Color(0xFF091413),
                     ),
                     title: const Text('End Time'),
                     trailing: Text(
@@ -320,7 +320,7 @@ class _AddActivityScreenState extends State<AddActivityScreen> {
                   IconButton(
                     icon: const Icon(
                       CupertinoIcons.add_circled_solid,
-                      color: Color(0xFF7C3AED),
+                      color: const Color(0xFF091413),
                     ),
                     onPressed: _addSubtask,
                   ),

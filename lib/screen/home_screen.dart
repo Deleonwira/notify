@@ -20,13 +20,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<Note> notes = [];
   List<Activity> activities = [];
-  
+
   int selectedCategoryIndex = 0;
   List<Category> categories = [
     Category(
       id: -1,
       name: "All",
-      color: const Color(0xFF3B0764),
+      color: const Color(0xFF091413),
       iconCodePoint: 0xf42d, // square_grid_2x2
     ),
   ];
@@ -55,12 +55,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Category(
             id: -1,
             name: "All",
-            color: const Color(0xFF3B0764),
-            iconCodePoint: 0xf42d,
+            color: const Color(0xFF091413),
+            iconCodePoint: 0,
           ),
-          ...dbCategories
+          ...dbCategories,
         ];
-        if (selectedCategoryIndex >= categories.length) selectedCategoryIndex = 0;
+        if (selectedCategoryIndex >= categories.length)
+          selectedCategoryIndex = 0;
       });
     }
   }
@@ -106,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF3B0764),
+                    color: const Color(0xFF091413),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -130,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF3B0764)
+                              ? const Color(0xFF091413)
                               : Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
@@ -144,18 +145,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              IconData(categories[index].iconCodePoint,
+                            if (categories[index].name != 'All') ...[
+                              Icon(
+                                IconData(
+                                  categories[index].iconCodePoint,
                                   fontFamily: 'CupertinoIcons',
-                                  fontPackage: 'cupertino_icons'),
-                              color: isSelected ? Colors.white : categories[index].color,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
+                                  fontPackage: 'cupertino_icons',
+                                ),
+                                color: isSelected
+                                    ? Colors.white
+                                    : categories[index].color,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                            ],
                             Text(
                               categories[index].name,
                               style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.grey[800],
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.grey[800],
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
@@ -200,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
           label: 'Undo',
-          textColor: const Color(0xFF7C3AED),
+          textColor: const Color(0xFF091413),
           onPressed: () async {
             await DatabaseHelper().insertNote(deletedNote);
             _loadNotes();
@@ -218,8 +227,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           note.content.toLowerCase().contains(_searchQuery.toLowerCase());
 
       bool matchesCategory = true;
-      if (selectedCategoryIndex > 0 && selectedCategoryIndex < categories.length) {
-        matchesCategory = note.category == categories[selectedCategoryIndex].name;
+      if (selectedCategoryIndex > 0 &&
+          selectedCategoryIndex < categories.length) {
+        matchesCategory =
+            note.category == categories[selectedCategoryIndex].name;
       }
 
       return matchesSearch && matchesCategory;
@@ -233,8 +244,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${date.day} ${months[date.month - 1]}';
   }
@@ -279,14 +300,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
-                              'Notare',
-                              style: TextStyle(
-                                fontSize: 34,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                                color: Color(0xFF3B0764),
-                              ),
+                            Row(
+                              children: [
+                                Image.asset(
+                                  'assets/Logo/logo.png',
+                                  height: 34,
+                                  width:
+                                      34, // Constrain width to prevent overflow
+                                  fit: BoxFit.contain,
+                                ),
+                                const SizedBox(width: 10),
+                                const Text(
+                                  'Notare',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                    color: const Color(0xFF091413),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -296,24 +329,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             onTap: () {
                               Scaffold.of(context).openDrawer();
                             },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(15),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
+                            child: const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: Icon(
                                 CupertinoIcons.line_horizontal_3,
-                                size: 18,
-                                color: Color(0xFF3B0764),
+                                size: 28,
+                                color: Color(0xFF091413),
                               ),
                             ),
                           ),
@@ -331,15 +352,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(10),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(12),
+                    // Removed drop shadow for Apple minimalist look
                   ),
                   child: TextField(
                     controller: _searchController,
@@ -348,12 +363,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         _searchQuery = value;
                       });
                     },
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 12),
                     decoration: InputDecoration(
                       hintText: 'Search notes...',
                       hintStyle: TextStyle(
                         color: Colors.grey[400],
-                        fontSize: 16,
+                        fontSize: 12,
                         fontWeight: FontWeight.w400,
                       ),
                       prefixIcon: Icon(
@@ -379,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
-                        vertical: 14,
+                        vertical: 10,
                       ),
                     ),
                   ),
@@ -418,13 +433,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF3B0764)
+                                      ? const Color(0xFF091413)
                                       : Colors.white,
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: const Color(0xFF3B0764).withAlpha(77),
+                                            color: const Color(
+                                              0xFF091413,
+                                            ).withAlpha(77),
                                             blurRadius: 8,
                                             offset: const Offset(0, 3),
                                           ),
@@ -439,16 +456,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      IconData(categories[index].iconCodePoint,
+                                    if (categories[index].name != 'All') ...[
+                                      Icon(
+                                        IconData(
+                                          categories[index].iconCodePoint,
                                           fontFamily: 'CupertinoIcons',
-                                          fontPackage: 'cupertino_icons'),
-                                      color: isSelected
-                                          ? Colors.white
-                                          : categories[index].color,
-                                      size: 14,
-                                    ),
-                                    const SizedBox(width: 8),
+                                          fontPackage: 'cupertino_icons',
+                                        ),
+                                        color: isSelected
+                                            ? Colors.white
+                                            : categories[index].color,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
                                     Text(
                                       categories[index].name,
                                       style: TextStyle(
@@ -487,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: const Icon(
                           CupertinoIcons.square_grid_2x2,
                           size: 20,
-                          color: Color(0xFF3B0764),
+                          color: Color(0xFF091413),
                         ),
                       ),
                     ),
@@ -505,9 +526,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const Text(
                       'My Notes',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF3B0764),
+                        color: const Color(0xFF091413),
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -515,7 +536,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Text(
                       '${displayNotes.length} notes',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 10,
                         color: Colors.grey[500],
                         fontWeight: FontWeight.w500,
                       ),
@@ -532,9 +553,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(CupertinoIcons.doc_text, size: 48, color: Colors.grey[300]),
+                        Icon(
+                          CupertinoIcons.doc_text,
+                          size: 48,
+                          color: Colors.grey[300],
+                        ),
                         const SizedBox(height: 12),
-                        Text('No notes found', style: TextStyle(color: Colors.grey[400])),
+                        Text(
+                          'No notes found',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
                       ],
                     ),
                   ),
@@ -585,9 +613,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const Text(
                       'Today\'s Tasks',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF3B0764),
+                        color: const Color(0xFF091413),
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -595,7 +623,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Text(
                       '${activities.length} tasks',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 10,
                         color: Colors.grey[500],
                         fontWeight: FontWeight.w500,
                       ),
@@ -612,9 +640,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(CupertinoIcons.checkmark_circle, size: 48, color: Colors.grey[300]),
+                        Icon(
+                          CupertinoIcons.checkmark_circle,
+                          size: 48,
+                          color: Colors.grey[300],
+                        ),
                         const SizedBox(height: 12),
-                        const Text('No tasks for today', style: TextStyle(color: Colors.grey)),
+                        const Text(
+                          'No tasks for today',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
@@ -624,28 +659,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final activity = activities[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _ActivityTile(
-                          activity: activity,
-                          onToggle: (val) async {
-                            setState(() {
-                              activity.isCompleted = val;
-                            });
-                            await DatabaseHelper().updateActivity(activity);
-                          },
-                          onDelete: () async {
-                            await DatabaseHelper().deleteActivity(activity.id!);
-                            _loadActivities();
-                          },
-                        ),
-                      );
-                    },
-                    childCount: activities.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final activity = activities[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _ActivityTile(
+                        activity: activity,
+                        onToggle: (val) async {
+                          setState(() {
+                            activity.isCompleted = val;
+                          });
+                          await DatabaseHelper().updateActivity(activity);
+                        },
+                        onDelete: () async {
+                          await DatabaseHelper().deleteActivity(activity.id!);
+                          _loadActivities();
+                        },
+                      ),
+                    );
+                  }, childCount: activities.length),
                 ),
               ),
           ],
@@ -662,13 +694,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: const LinearGradient(
-              colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)],
+              colors: [Color(0xDD091413), Color(0xFF091413)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF7C3AED).withAlpha(102),
+                color: Colors.black54,
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -685,7 +717,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               // 1. Select category first
               final Category? selected = await Navigator.push(
                 context,
-                CupertinoPageRoute(builder: (_) => const CategorySelectionScreen()),
+                CupertinoPageRoute(
+                  builder: (_) => const CategorySelectionScreen(),
+                ),
               );
 
               if (selected == null) return; // User cancelled
@@ -755,13 +789,15 @@ class _ActivityTile extends StatelessWidget {
         } else {
           actType = 'Reminder';
         }
-        
+
         return await showCupertinoDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return CupertinoAlertDialog(
               title: Text('Delete $actType'),
-              content: Text('Are you sure you want to delete this ${actType.toLowerCase()}?'),
+              content: Text(
+                'Are you sure you want to delete this ${actType.toLowerCase()}?',
+              ),
               actions: [
                 CupertinoDialogAction(
                   child: const Text('Cancel'),
@@ -810,13 +846,21 @@ class _ActivityTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: activity.isCompleted ? activity.color : Colors.grey[300]!,
+                    color: activity.isCompleted
+                        ? activity.color
+                        : Colors.grey[300]!,
                     width: 2,
                   ),
-                  color: activity.isCompleted ? activity.color : Colors.transparent,
+                  color: activity.isCompleted
+                      ? activity.color
+                      : Colors.transparent,
                 ),
                 child: activity.isCompleted
-                    ? const Icon(CupertinoIcons.checkmark, size: 14, color: Colors.white)
+                    ? const Icon(
+                        CupertinoIcons.checkmark,
+                        size: 14,
+                        color: Colors.white,
+                      )
                     : null,
               ),
             ),
@@ -830,7 +874,9 @@ class _ActivityTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      decoration: activity.isCompleted ? TextDecoration.lineThrough : null,
+                      decoration: activity.isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
                       color: activity.isCompleted ? Colors.grey : Colors.black,
                     ),
                   ),
@@ -966,7 +1012,7 @@ class _NoteCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF3B0764),
+                    color: Colors.black,
                     letterSpacing: -0.2,
                   ),
                   maxLines: 2,
